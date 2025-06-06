@@ -64,45 +64,59 @@ library CoreWriterLib {
     bool toPerp;
   }
 
+  function encodeLimitOrderAction(LimitOrderAction memory action) internal pure returns (bytes memory) {
+    return abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_LIMIT_ORDER, abi.encode(action));
+  }
+
   function sendLimitOrderAction(LimitOrderAction memory action) internal {
-    CoreWriter(CORE_WRITER).sendRawAction(
-      abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_LIMIT_ORDER, abi.encode(action))
-    );
+    CoreWriter(CORE_WRITER).sendRawAction(encodeLimitOrderAction(action));
+  }
+
+  function encodeVaultTransfer(VaultTransferAction memory action) internal pure returns (bytes memory) {
+    return abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_VAULT_TRANSFER, abi.encode(action));
   }
 
   function sendVaultTransfer(VaultTransferAction memory action) internal {
-    CoreWriter(CORE_WRITER).sendRawAction(
-      abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_VAULT_TRANSFER, abi.encode(action))
-    );
+    CoreWriter(CORE_WRITER).sendRawAction(encodeVaultTransfer(action));
+  }
+
+  function encodeTokenDelegate(TokenDelegateAction memory action) internal pure returns (bytes memory) {
+    return abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_TOKEN_DELEGATE, abi.encode(action));
   }
 
   function sendTokenDelegate(TokenDelegateAction memory action) internal {
-    CoreWriter(CORE_WRITER).sendRawAction(
-      abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_TOKEN_DELEGATE, abi.encode(action))
-    );
+    CoreWriter(CORE_WRITER).sendRawAction(encodeTokenDelegate(action));
+  }
+
+  function encodeStakingDeposit(StakingDepositAction memory action) internal pure returns (bytes memory) {
+    return abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_STAKING_DEPOSIT, abi.encode(action));
   }
 
   function sendStakingDeposit(StakingDepositAction memory action) internal {
-    CoreWriter(CORE_WRITER).sendRawAction(
-      abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_STAKING_DEPOSIT, abi.encode(action))
-    );
+    CoreWriter(CORE_WRITER).sendRawAction(encodeStakingDeposit(action));
+  }
+
+  function encodeStakingWithdraw(StakingWithdrawAction memory action) internal pure returns (bytes memory) {
+    return abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_STAKING_WITHDRAW, abi.encode(action));
   }
 
   function sendStakingWithdraw(StakingWithdrawAction memory action) internal {
-    CoreWriter(CORE_WRITER).sendRawAction(
-      abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_STAKING_WITHDRAW, abi.encode(action))
-    );
+    CoreWriter(CORE_WRITER).sendRawAction(encodeStakingWithdraw(action));
+  }
+
+  function encodeSpotSend(SpotSendAction memory action) internal pure returns (bytes memory) {
+    return abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_SPOT_SEND, abi.encode(action));
   }
 
   function sendSpotSend(SpotSendAction memory action) internal {
-    CoreWriter(CORE_WRITER).sendRawAction(
-      abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_SPOT_SEND, abi.encode(action))
-    );
+    CoreWriter(CORE_WRITER).sendRawAction(encodeSpotSend(action));
+  }
+
+  function encodeUsdClassTransfer(UsdClassTransferAction memory action) internal pure returns (bytes memory) {
+    return abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_USD_CLASS_TRANSFER, abi.encode(action));
   }
 
   function sendUsdClassTransfer(UsdClassTransferAction memory action) internal {
-    CoreWriter(CORE_WRITER).sendRawAction(
-      abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_USD_CLASS_TRANSFER, abi.encode(action))
-    );
+    CoreWriter(CORE_WRITER).sendRawAction(encodeUsdClassTransfer(action));
   }
 }
