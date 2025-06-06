@@ -11,7 +11,7 @@ const pkgRaw = await fs.readFile(packagePath, "utf8");
 const pkg = JSON.parse(pkgRaw);
 
 // Load the root package.json (assumed two levels up)
-const rootPath = path.resolve(__dirname, "../package.json");
+const rootPath = path.resolve(__dirname, "../../package.json");
 const rootRaw = await fs.readFile(rootPath, "utf8");
 const rootPkg = JSON.parse(rootRaw);
 
@@ -19,7 +19,8 @@ const rootPkg = JSON.parse(rootRaw);
 const workspaceVersions = {};
 
 for (const pattern of rootPkg.workspaces || []) {
-  const baseDir = path.resolve(__dirname, "../", pattern.replace("/*", ""));
+  const baseDir = path.resolve(__dirname, "../../", pattern.replace("/*", ""));
+
   const dirs = await fs.readdir(baseDir);
   for (const dir of dirs) {
     const subPkgPath = path.join(baseDir, dir, "package.json");

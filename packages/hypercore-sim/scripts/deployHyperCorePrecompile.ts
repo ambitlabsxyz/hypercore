@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { AddressLike } from "ethers";
-import { HyperCorePrecompiles__factory } from "./typechain-types";
 import { setCode } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { HyperCorePrecompiles__factory } from "./typechain-types";
 
 export const deployHyperCorePrecompile = async (hyperCore: AddressLike, precompileAddress: string) => {
   const [signer] = await ethers.getSigners();
