@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { CoreReaderLib } from "@ambitlabs/hypercore/contracts/CoreReaderLib.sol";
 import { HyperCoreWrite } from "./HyperCoreWrite.sol";
 import { KNOWN_TOKEN_HYPE } from "./HyperCore.sol";
@@ -9,9 +8,9 @@ import { KNOWN_TOKEN_HYPE } from "./HyperCore.sol";
 contract SpotERC20 {
   error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);
 
-  uint64 _index;
+  uint64 private _index;
 
-  CoreReaderLib.TokenInfo _token;
+  CoreReaderLib.TokenInfo private _token;
 
   uint256 private _totalSupply;
 
@@ -52,11 +51,11 @@ contract SpotERC20 {
     return transferFrom(msg.sender, to, value);
   }
 
-  function allowance(address owner, address spender) external pure returns (uint256) {
+  function allowance(address /*owner*/, address /*spender*/) external pure returns (uint256) {
     return type(uint256).max;
   }
 
-  function approve(address spender, uint256 value) external pure returns (bool) {
+  function approve(address /*spender*/, uint256 /*value*/) external pure returns (bool) {
     return true;
   }
 

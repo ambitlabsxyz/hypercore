@@ -18,7 +18,7 @@ contract HyperCore {
   using EnumerableSet for EnumerableSet.AddressSet;
   using DoubleEndedQueue for DoubleEndedQueue.Bytes32Deque;
 
-  mapping(uint64 token => CoreReaderLib.TokenInfo) _tokens;
+  mapping(uint64 token => CoreReaderLib.TokenInfo) private _tokens;
 
   struct WithdrawRequest {
     address account;
@@ -35,13 +35,13 @@ contract HyperCore {
     mapping(address validator => CoreReaderLib.Delegation) delegations;
   }
 
-  mapping(address account => Account) _accounts;
+  mapping(address account => Account) private _accounts;
 
-  mapping(address vault => uint64) _vaultEquity;
+  mapping(address vault => uint64) private _vaultEquity;
 
-  DoubleEndedQueue.Bytes32Deque _withdrawQueue;
+  DoubleEndedQueue.Bytes32Deque private _withdrawQueue;
 
-  EnumerableSet.AddressSet _validators;
+  EnumerableSet.AddressSet private _validators;
 
   constructor() {
     registerTokenInfo(
