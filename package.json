@@ -1,0 +1,17 @@
+{
+  "name": "ambitlabs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "license": "ISC",
+  "author": "Ambit Labs",
+  "type": "module",
+  "workspaces": [
+    "packages/**/*"
+  ],
+  "packageManager": "yarn@3.2.3",
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
