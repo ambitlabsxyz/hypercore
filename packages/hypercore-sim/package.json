@@ -1,6 +1,6 @@
 {
   "name": "@ambitlabs/hypercore-sim",
-  "version": "1.0.0-beta2",
+  "version": "1.0.0-beta3",
   "types": "./dist/esm/scripts/index.d.ts",
   "module": "./dist/esm/scripts/index.js",
   "main": "./dist/cjs/scripts/index.js",
