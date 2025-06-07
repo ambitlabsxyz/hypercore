@@ -78,79 +78,79 @@ library CoreReaderLib {
     int8 evmExtraWeiDecimals;
   }
 
-  function readPosition(address user, uint16 perp) external view returns (Position memory) {
+  function readPosition(address user, uint16 perp) internal view returns (Position memory) {
     (bool success, bytes memory result) = PRECOMPILE_ADDRESS_POSITION.staticcall(abi.encode(user, perp));
     require(success, ReadFailure(PRECOMPILE_ADDRESS_POSITION));
     return abi.decode(result, (Position));
   }
 
-  function readSpotBalance(address user, uint64 token) external view returns (SpotBalance memory) {
+  function readSpotBalance(address user, uint64 token) internal view returns (SpotBalance memory) {
     (bool success, bytes memory result) = PRECOMPILE_ADDRESS_SPOT_BALANCE.staticcall(abi.encode(user, token));
     require(success, ReadFailure(PRECOMPILE_ADDRESS_POSITION));
     return abi.decode(result, (SpotBalance));
   }
 
-  function readUserVaultEquity(address user, address vault) external view returns (UserVaultEquity memory) {
+  function readUserVaultEquity(address user, address vault) internal view returns (UserVaultEquity memory) {
     (bool success, bytes memory result) = PRECOMPILE_ADDRESS_VAULT_EQUITY.staticcall(abi.encode(user, vault));
     require(success, ReadFailure(PRECOMPILE_ADDRESS_POSITION));
     return abi.decode(result, (UserVaultEquity));
   }
 
-  function readWithdrawable(address user) external view returns (Withdrawable memory) {
+  function readWithdrawable(address user) internal view returns (Withdrawable memory) {
     (bool success, bytes memory result) = PRECOMPILE_ADDRESS_WITHDRAWABLE.staticcall(abi.encode(user));
     require(success, ReadFailure(PRECOMPILE_ADDRESS_POSITION));
     return abi.decode(result, (Withdrawable));
   }
 
-  function readDelegations(address user) external view returns (Delegation[] memory) {
+  function readDelegations(address user) internal view returns (Delegation[] memory) {
     (bool success, bytes memory result) = PRECOMPILE_ADDRESS_DELEGATIONS.staticcall(abi.encode(user));
     require(success, ReadFailure(PRECOMPILE_ADDRESS_POSITION));
     return abi.decode(result, (Delegation[]));
   }
 
-  function readDelegatorSummary(address user) external view returns (DelegatorSummary memory) {
+  function readDelegatorSummary(address user) internal view returns (DelegatorSummary memory) {
     (bool success, bytes memory result) = PRECOMPILE_ADDRESS_DELEGATOR_SUMMARY.staticcall(abi.encode(user));
     require(success, ReadFailure(PRECOMPILE_ADDRESS_POSITION));
     return abi.decode(result, (DelegatorSummary));
   }
 
-  function readMarkPx(uint32 index) external view returns (uint64) {
+  function readMarkPx(uint32 index) internal view returns (uint64) {
     (bool success, bytes memory result) = PRECOMPILE_ADDRESS_MARK_PX.staticcall(abi.encode(index));
     require(success, ReadFailure(PRECOMPILE_ADDRESS_POSITION));
     return abi.decode(result, (uint64));
   }
 
-  function readOraclePx(uint32 index) external view returns (uint64) {
+  function readOraclePx(uint32 index) internal view returns (uint64) {
     (bool success, bytes memory result) = PRECOMPILE_ADDRESS_ORACLE_PX.staticcall(abi.encode(index));
     require(success, ReadFailure(PRECOMPILE_ADDRESS_POSITION));
     return abi.decode(result, (uint64));
   }
 
-  function readSpotPx(uint32 index) external view returns (uint64) {
+  function readSpotPx(uint32 index) internal view returns (uint64) {
     (bool success, bytes memory result) = PRECOMPILE_ADDRESS_SPOT_PX.staticcall(abi.encode(index));
     require(success, ReadFailure(PRECOMPILE_ADDRESS_POSITION));
     return abi.decode(result, (uint64));
   }
 
-  function readL1BlockNumber() external view returns (uint64) {
+  function readL1BlockNumber() internal view returns (uint64) {
     (bool success, bytes memory result) = PRECOMPILE_ADDRESS_L1_BLOCK_NUMBER.staticcall(abi.encode());
     require(success, ReadFailure(PRECOMPILE_ADDRESS_POSITION));
     return abi.decode(result, (uint64));
   }
 
-  function readPerpAssetInfo(uint32 perp) external view returns (PerpAssetInfo memory) {
+  function readPerpAssetInfo(uint32 perp) internal view returns (PerpAssetInfo memory) {
     (bool success, bytes memory result) = PRECOMPILE_ADDRESS_PERP_ASSET_INFO.staticcall(abi.encode(perp));
     require(success, ReadFailure(PRECOMPILE_ADDRESS_POSITION));
     return abi.decode(result, (PerpAssetInfo));
   }
 
-  function readSpotInfo(uint32 spot) external view returns (SpotInfo memory) {
+  function readSpotInfo(uint32 spot) internal view returns (SpotInfo memory) {
     (bool success, bytes memory result) = PRECOMPILE_ADDRESS_SPOT_INFO.staticcall(abi.encode(spot));
     require(success, ReadFailure(PRECOMPILE_ADDRESS_POSITION));
     return abi.decode(result, (SpotInfo));
   }
 
-  function readTokenInfo(uint32 token) external view returns (TokenInfo memory) {
+  function readTokenInfo(uint32 token) internal view returns (TokenInfo memory) {
     (bool success, bytes memory result) = PRECOMPILE_ADDRESS_TOKEN_INFO.staticcall(abi.encode(token));
     require(success, ReadFailure(PRECOMPILE_ADDRESS_POSITION));
     return abi.decode(result, (TokenInfo));
