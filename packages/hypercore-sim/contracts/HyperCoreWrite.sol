@@ -89,9 +89,10 @@ contract HyperCoreWrite is CoreWriter {
 
   /// @dev some actions are delayed before they are executed so need to simulate this
   function runAt(uint24 kind, bytes memory data) private view returns (uint256) {
-    if (kind == CoreWriterLib.CORE_WRITER_ACTION_USD_CLASS_TRANSFER) {
-      CoreWriterLib.UsdClassTransferAction memory action = abi.decode(data, (CoreWriterLib.UsdClassTransferAction));
-      return action.toPerp ? block.timestamp : block.timestamp + 4 seconds;
+    if (kind == CoreWriterLib.CORE_WRITER_ACTION_VAULT_TRANSFER) {
+      // there is a 4 second delay for vault withdrawls
+      CoreWriterLib.VaultTransferAction memory action = abi.decode(data, (CoreWriterLib.VaultTransferAction));
+      return action.isDeposit ? block.timestamp : block.timestamp + 4 seconds;
     }
     return block.timestamp;
   }

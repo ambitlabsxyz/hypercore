@@ -209,12 +209,6 @@ describe("HyperCore <> HyperEVM", function () {
       });
       await hyperCoreWrite.flushActionQueue();
 
-      // NOTE: there is a 4 second delay before the equity is withdrawn
-      expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(10, 6)]);
-
-      await time.increase(4);
-      await hyperCoreWrite.flushActionQueue();
-
       expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(6, 6)]);
       expect(await hyperCore.readSpotBalance(users[0], 0)).deep.eq([scale(4, 8), 0, 0]);
     });
@@ -265,6 +259,12 @@ describe("HyperCore <> HyperEVM", function () {
         to: "0x3333333333333333333333333333333333333333",
         data: encodeVaultTransfer("0x0000000000000000000000000000000000000123", false, scale(6, 6)),
       });
+      await hyperCoreWrite.flushActionQueue();
+
+      // there is a 4 second delay from a withdrawl
+      expect(await hyperCore.readWithdrawable(users[0])).deep.eq([0]);
+
+      await time.increase(4);
       await hyperCoreWrite.flushActionQueue();
 
       expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(6, 6)]);
