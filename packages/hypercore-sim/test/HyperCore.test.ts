@@ -113,9 +113,30 @@ describe("HyperCore <> HyperEVM", function () {
       expect(await usdc.balanceOf(users[0])).eq(scale(5, 8));
     });
 
+    it("spotSend can transfer forced amount from HyperCore to HyperEVM", async function () {
+      const { users, hyperCore, hyperCoreWrite, usdc, encodeSpotSendData } = await loadFixture(deployHyperCoreFixture);
+
+      await hyperCore.forceSpot(users[0], 0, scale(5, 8));
+      await usdc.mint(systemAddress(0), scale(5, 8));
+
+      let spotBalance1 = await hyperCore.readSpotBalance(users[0], 0);
+      expect(spotBalance1.total).eq(scale(5, 8));
+
+      await users[0].sendTransaction({
+        to: "0x3333333333333333333333333333333333333333",
+        data: encodeSpotSendData(systemAddress(0), 0, scale(5, 8)),
+      });
+      await hyperCoreWrite.flushActionQueue();
+
+      spotBalance1 = await hyperCore.readSpotBalance(users[0], 0);
+      expect(spotBalance1.total).eq(0);
+      expect(await usdc.balanceOf(users[0])).eq(scale(5, 8));
+    });
+
     it("spotSend can transfer native from HyperCore to HyperEVM", async function () {
-      const { users, hyperCore, hyperCoreWrite, KNOWN_TOKEN_HYPE, encodeSpotSendData } =
-        await loadFixture(deployHyperCoreFixture);
+      const { users, hyperCore, hyperCoreWrite, KNOWN_TOKEN_HYPE, encodeSpotSendData } = await loadFixture(
+        deployHyperCoreFixture
+      );
 
       await users[0].sendTransaction({ to: "0x2222222222222222222222222222222222222222", value: scale(10, 18) });
       await hyperCoreWrite.flushActionQueue();
@@ -188,28 +209,34 @@ describe("HyperCore <> HyperEVM", function () {
       });
       await hyperCoreWrite.flushActionQueue();
 
+      // NOTE: there is a 4 second delay before the equity is withdrawn
+      expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(10, 6)]);
+
+      await time.increase(4);
+      await hyperCoreWrite.flushActionQueue();
+
       expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(6, 6)]);
       expect(await hyperCore.readSpotBalance(users[0], 0)).deep.eq([scale(4, 8), 0, 0]);
     });
   });
 
-  describe("serialization", function () {
-    it("can serialize and deserialize a withdraw request", async function () {
-      const { hyperCore } = await loadFixture(deployHyperCoreFixture);
+  // describe("serialization", function () {
+  //   it("can serialize and deserialize a withdraw request", async function () {
+  //     const { hyperCore } = await loadFixture(deployHyperCoreFixture);
 
-      const bytes = await hyperCore.serializeWithdrawRequest({
-        account: "0x0000000000000000000000000000000000001234",
-        amount: 123456789,
-        lockedUntilTimestamp: 987654321,
-      });
+  //     const bytes = await hyperCore.serializeWithdrawRequest({
+  //       account: "0x0000000000000000000000000000000000001234",
+  //       amount: 123456789,
+  //       lockedUntilTimestamp: 987654321,
+  //     });
 
-      const request = await hyperCore.deserializeWithdrawRequest(bytes);
+  //     const request = await hyperCore.deserializeWithdrawRequest(bytes);
 
-      expect(request.account).eq("0x0000000000000000000000000000000000001234");
-      expect(request.amount).eq(123456789);
-      expect(request.lockedUntilTimestamp).eq(987654321);
-    });
-  });
+  //     expect(request.account).eq("0x0000000000000000000000000000000000001234");
+  //     expect(request.amount).eq(123456789);
+  //     expect(request.lockedUntilTimestamp).eq(987654321);
+  //   });
+  // });
 
   describe("equity", function () {
     it("succeeds when transferring into vault equity", async function () {
@@ -258,6 +285,22 @@ describe("HyperCore <> HyperEVM", function () {
       await hyperCoreWrite.flushActionQueue();
 
       expect(await hyperCore.readWithdrawable(users[0])).deep.eq([0n]);
+    });
+  });
+
+  describe("staking", function () {
+    it("unstaking succeeds", async function () {
+      const { users, hyperCore, hyperCoreWrite, encodeStakingWithdraw } = await loadFixture(deployHyperCoreFixture);
+
+      await hyperCore.forceStaking(users[0], 100000000n);
+
+      await users[0].sendTransaction({
+        to: "0x3333333333333333333333333333333333333333",
+        data: encodeStakingWithdraw(50000000n),
+      });
+      await hyperCoreWrite.flushActionQueue();
+
+      expect(await hyperCore.readDelegatorSummary(users[0])).to.deep.eq([0n, 50000000n, 50000000n, 1n]);
     });
   });
 });

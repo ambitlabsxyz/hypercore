@@ -45,6 +45,16 @@ export const deployHyperCoreFixture = async () => {
     return CoreWriter__factory.createInterface().encodeFunctionData("sendRawAction", [action]);
   };
 
+  const encodeStakingDeposit = (wei: BigNumberish) => {
+    const action = encodeAction(4, ABI.encode(["uint64"], [wei]));
+    return CoreWriter__factory.createInterface().encodeFunctionData("sendRawAction", [action]);
+  };
+
+  const encodeStakingWithdraw = (wei: BigNumberish) => {
+    const action = encodeAction(5, ABI.encode(["uint64"], [wei]));
+    return CoreWriter__factory.createInterface().encodeFunctionData("sendRawAction", [action]);
+  };
+
   return {
     users: [signer, user2, user3],
     hyperCore,
@@ -55,5 +65,7 @@ export const deployHyperCoreFixture = async () => {
     encodeSpotSendData,
     encodeUsdClassTransfer,
     encodeVaultTransfer,
+    encodeStakingDeposit,
+    encodeStakingWithdraw,
   };
 };

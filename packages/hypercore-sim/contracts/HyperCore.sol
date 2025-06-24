@@ -5,9 +5,11 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { DoubleEndedQueue } from "@openzeppelin/contracts/utils/structs/DoubleEndedQueue.sol";
+import { Heap } from "@openzeppelin/contracts/utils/structs/Heap.sol";
 import { CoreReaderLib } from "@ambitlabs/hypercore/contracts/CoreReaderLib.sol";
 import { CoreWriterLib } from "@ambitlabs/hypercore/contracts/CoreWriterLib.sol";
 import { SpotERC20 } from "./SpotERC20.sol";
+import { SerializationLib } from "./SerializationLib.sol";
 
 uint64 constant KNOWN_TOKEN_USDC = 0;
 uint64 constant KNOWN_TOKEN_HYPE = 150;
@@ -17,6 +19,7 @@ contract HyperCore {
   using SafeCast for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
   using DoubleEndedQueue for DoubleEndedQueue.Bytes32Deque;
+  using Heap for Heap.Uint256Heap;
 
   mapping(uint64 token => CoreReaderLib.TokenInfo) private _tokens;
 
@@ -136,7 +139,7 @@ contract HyperCore {
   /// spot balance so we need to check this at the end of each operation to simulate that.
   function flushCWithdrawQueue() public {
     while (_withdrawQueue.length() > 0) {
-      WithdrawRequest memory request = deserializeWithdrawRequest(_withdrawQueue.front());
+      WithdrawRequest memory request = SerializationLib.deserializeWithdrawRequest(_withdrawQueue.front());
 
       if (request.lockedUntilTimestamp > block.timestamp) {
         break;
@@ -303,23 +306,8 @@ contract HyperCore {
         lockedUntilTimestamp: uint32(block.timestamp + 7 days)
       });
 
-      _withdrawQueue.pushBack(serializeWithdrawRequest(withrawRequest));
+      _withdrawQueue.pushBack(SerializationLib.serializeWithdrawRequest(withrawRequest));
     }
-  }
-
-  function serializeWithdrawRequest(WithdrawRequest memory request) public pure returns (bytes32) {
-    return
-      bytes32(
-        (uint256(uint160(request.account)) << 96) |
-          (uint256(request.amount) << 32) |
-          uint40(request.lockedUntilTimestamp)
-      );
-  }
-
-  function deserializeWithdrawRequest(bytes32 data) public pure returns (WithdrawRequest memory request) {
-    request.account = address(uint160(uint256(data) >> 96));
-    request.amount = uint64(uint256(data) >> 32);
-    request.lockedUntilTimestamp = uint32(uint256(data));
   }
 
   function executeTokenDelegate(address sender, CoreWriterLib.TokenDelegateAction memory action) private {
@@ -392,7 +380,7 @@ contract HyperCore {
     summary.undelegated = _accounts[user].staking;
 
     for (uint256 i; i < _withdrawQueue.length(); i++) {
-      WithdrawRequest memory request = deserializeWithdrawRequest(_withdrawQueue.at(i));
+      WithdrawRequest memory request = SerializationLib.deserializeWithdrawRequest(_withdrawQueue.at(i));
       if (request.account == user) {
         summary.nPendingWithdrawals++;
         summary.totalPendingWithdrawal += request.amount;

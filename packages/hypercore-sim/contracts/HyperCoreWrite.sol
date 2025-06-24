@@ -1,16 +1,27 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
+import { Heap } from "@openzeppelin/contracts/utils/structs/Heap.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { CoreWriter } from "@ambitlabs/hypercore/contracts/CoreWriter.sol";
+import { CoreWriterLib } from "@ambitlabs/hypercore/contracts/CoreWriterLib.sol";
 import { HyperCore } from "./HyperCore.sol";
 
 contract HyperCoreWrite is CoreWriter {
   using Address for address;
+  using Heap for Heap.Uint256Heap;
 
-  bytes[] private _actionQueue;
+  uint128 private _sequence;
 
-  uint256[] private _actionQueueValues;
+  Heap.Uint256Heap private _actionQueue;
+
+  struct Action {
+    uint256 timestamp;
+    bytes data;
+    uint256 value;
+  }
+
+  mapping(uint256 id => Action) _actions;
 
   HyperCore private _hyperCore;
 
@@ -19,17 +30,30 @@ contract HyperCoreWrite is CoreWriter {
   }
 
   function enqueueAction(bytes memory data, uint256 value) public {
-    _actionQueue.push(data);
-    _actionQueueValues.push(value);
+    enqueueAction(block.timestamp, data, value);
+  }
+
+  function enqueueAction(uint256 timestamp, bytes memory data, uint256 value) public {
+    uint256 uniqueId = (uint256(timestamp) << 128) | uint256(_sequence++);
+
+    _actions[uniqueId] = Action(timestamp, data, value);
+    _actionQueue.insert(uniqueId);
   }
 
   function flushActionQueue() external {
-    for (uint256 i = 0; i < _actionQueue.length; i++) {
-      address(_hyperCore).functionCallWithValue(_actionQueue[i], _actionQueueValues[i]);
-    }
+    while (_actionQueue.length() > 0) {
+      Action memory action = _actions[_actionQueue.peek()];
 
-    delete _actionQueue;
-    delete _actionQueueValues;
+      // the action queue is a priority queue so the timestamp takes precedence in the
+      // ordering which means we can safely stop processing if the actions are delayed
+      if (action.timestamp > block.timestamp) {
+        break;
+      }
+
+      address(_hyperCore).functionCallWithValue(action.data, action.value);
+
+      _actionQueue.pop();
+    }
 
     _hyperCore.flushCWithdrawQueue();
   }
@@ -56,8 +80,19 @@ contract HyperCoreWrite is CoreWriter {
 
     uint24 kind = (uint24(uint8(data[1])) << 16) | (uint24(uint8(data[2])) << 8) | (uint24(uint8(data[3])));
 
-    enqueueAction(abi.encodeCall(HyperCore.executeRawAction, (msg.sender, kind, data[4:])), 0);
+    bytes memory call = abi.encodeCall(HyperCore.executeRawAction, (msg.sender, kind, data[4:]));
+
+    enqueueAction(runAt(kind, data[4:]), call, 0);
 
     emit RawAction(msg.sender, data);
+  }
+
+  /// @dev some actions are delayed before they are executed so need to simulate this
+  function runAt(uint24 kind, bytes memory data) private view returns (uint256) {
+    if (kind == CoreWriterLib.CORE_WRITER_ACTION_USD_CLASS_TRANSFER) {
+      CoreWriterLib.UsdClassTransferAction memory action = abi.decode(data, (CoreWriterLib.UsdClassTransferAction));
+      return action.toPerp ? block.timestamp : block.timestamp + 4 seconds;
+    }
+    return block.timestamp;
   }
 }
