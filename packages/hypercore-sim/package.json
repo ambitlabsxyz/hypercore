@@ -1,6 +1,6 @@
 {
   "name": "@ambitlabs/hypercore-sim",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "types": "./dist/esm/scripts/index.d.ts",
   "module": "./dist/esm/scripts/index.js",
   "main": "./dist/cjs/scripts/index.js",
@@ -17,7 +17,10 @@
     "solhint": "solhint './contracts/*.sol'",
     "fix-deps": "node ./replace-workspace-deps.mjs",
     "prepack": "yarn fix-deps",
-    "pub": "hardhat clean && hardhat compile && npm run build && npm publish"
+    "pub": "hardhat clean && hardhat compile && npm run build && npm publish --access public"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "@ambitlabs/hypercore": "workspace:^",

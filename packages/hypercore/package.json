@@ -1,6 +1,6 @@
 {
   "name": "@ambitlabs/hypercore",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "main": "index.js",
   "files": [
     "contracts/*",
@@ -9,7 +9,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "solhint": "solhint './contracts/*.sol'",
-    "pub": "hardhat clean && hardhat compile && npm publish"
+    "pub": "hardhat clean && hardhat compile && npm publish --access public"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
