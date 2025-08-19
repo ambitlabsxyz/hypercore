@@ -1,6 +1,6 @@
 {
   "name": "@ambitlabs/hypercore-sim",
-  "version": "1.0.3",
+  "version": "1.0.6",
   "types": "./dist/esm/scripts/index.d.ts",
   "module": "./dist/esm/scripts/index.js",
   "main": "./dist/cjs/scripts/index.js",
@@ -23,7 +23,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@ambitlabs/hypercore": "workspace:^",
+    "@ambitlabs/hypercore": "^workspace:*",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
     "@nomicfoundation/hardhat-ignition": "^0.15.5",

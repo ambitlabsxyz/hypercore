@@ -8,7 +8,7 @@ import { HyperCore } from "./HyperCore.sol";
 contract HyperCorePrecompiles {
   HyperCore private _hyperCore;
 
-  receive() external payable {}
+  //receive() external payable {}
 
   function setHyperCore(HyperCore hyperCore) public {
     _hyperCore = hyperCore;
@@ -43,6 +43,11 @@ contract HyperCorePrecompiles {
     if (address(this) == CoreReaderLib.PRECOMPILE_ADDRESS_POSITION) {
       (address user, uint16 perp) = abi.decode(data, (address, uint16));
       return abi.encode(_hyperCore.readPosition(user, perp));
+    }
+
+    if (address(this) == CoreReaderLib.PRECOMPILE_ADDRESS_L1_BLOCK_NUMBER) {
+      uint64 blockNumber = uint64(block.number) * 5;
+      return abi.encode(blockNumber);
     }
 
     revert();

@@ -7,6 +7,17 @@ import { scale, systemAddress } from "./utils";
 import { deployHyperCoreFixture } from "./deployHyperCoreFixture";
 
 describe("HyperCore <> HyperEVM", function () {
+  it("reads the L1 block number", async function () {
+    const {} = await loadFixture(deployHyperCoreFixture);
+
+    const factory = await ethers.getContractFactory("SampleReader");
+
+    const reader = await factory.deploy();
+    await reader.waitForDeployment();
+
+    console.log(await reader.readL1BlockNumber());
+  });
+
   describe("spot", function () {
     it("succeeds when transferring token to HyperCore", async function () {
       const { users, hyperCore, hyperCoreWrite, usdc } = await loadFixture(deployHyperCoreFixture);
