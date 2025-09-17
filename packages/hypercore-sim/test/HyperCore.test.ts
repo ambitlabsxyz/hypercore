@@ -5,6 +5,7 @@ import hre, { ethers } from "hardhat";
 import { AddressLike, resolveAddress, ZeroAddress } from "ethers";
 import { scale, systemAddress } from "./utils";
 import { deployHyperCoreFixture } from "./deployHyperCoreFixture";
+import { SpotERC20__factory } from "../scripts";
 
 describe("HyperCore <> HyperEVM", function () {
   it("reads the L1 block number", async function () {
@@ -32,6 +33,77 @@ describe("HyperCore <> HyperEVM", function () {
 
       spotBalance = await hyperCore.readSpotBalance(users[0], 0);
       expect(spotBalance.total).eq(scale(5, 8));
+    });
+
+    it("succeeds when transferring tokens with difference precision to HyperCore", async function () {
+      const { users, hyperCore, hyperCoreWrite } = await loadFixture(deployHyperCoreFixture);
+
+      await hyperCore.registerTokenInfo(1, {
+        name: "TEST",
+        spots: [],
+        deployerTradingFeeShare: 0,
+        deployer: ZeroAddress,
+        evmContract: ZeroAddress,
+        szDecimals: 2,
+        weiDecimals: 8,
+        evmExtraWeiDecimals: -2,
+      });
+      await hyperCore.deploySpotERC20(1);
+
+      const tokenInfo = await hyperCore.readTokenInfo(1);
+
+      const test = SpotERC20__factory.connect(tokenInfo.evmContract, users[0]);
+
+      await test.mint(users[0], scale(10, 6));
+      expect(await test.balanceOf(users[0])).eq(scale(10, 6));
+
+      let spotBalance = await hyperCore.readSpotBalance(users[0], 1);
+      expect(spotBalance.total).eq(0);
+
+      await test.transfer(systemAddress(1), scale(5, 6));
+      await hyperCoreWrite.flushActionQueue();
+
+      spotBalance = await hyperCore.readSpotBalance(users[0], 1);
+      expect(spotBalance.total).eq(scale(5, 8));
+
+      expect(await test.balanceOf(users[0])).eq(scale(5, 6));
+    });
+
+    it("succeeds when transferring tokens from HyperCore with different precision", async function () {
+      const { users, hyperCore, hyperCoreWrite, encodeSpotSendData } = await loadFixture(deployHyperCoreFixture);
+
+      await hyperCore.registerTokenInfo(1, {
+        name: "TEST",
+        spots: [],
+        deployerTradingFeeShare: 0,
+        deployer: ZeroAddress,
+        evmContract: ZeroAddress,
+        szDecimals: 2,
+        weiDecimals: 8,
+        evmExtraWeiDecimals: -2,
+      });
+      await hyperCore.deploySpotERC20(1);
+
+      const tokenInfo = await hyperCore.readTokenInfo(1);
+
+      const test = SpotERC20__factory.connect(tokenInfo.evmContract, users[0]);
+
+      await hyperCore.forceSpot(users[0], 1, 12345678);
+      await test.mint(systemAddress(1), 12345678);
+
+      let spotBalance = await hyperCore.readSpotBalance(users[0], 1);
+      expect(spotBalance.total).eq(12345678);
+
+      await users[0].sendTransaction({
+        to: "0x3333333333333333333333333333333333333333",
+        data: encodeSpotSendData(systemAddress(1), 1, 12345600),
+      });
+      await hyperCoreWrite.flushActionQueue();
+
+      spotBalance = await hyperCore.readSpotBalance(users[0], 1);
+      expect(spotBalance.total).eq(78);
+
+      expect(await test.balanceOf(users[0])).eq(123456);
     });
 
     it("silently fails when transferring token to HyperCore if account hasnt been created", async function () {
