@@ -262,15 +262,17 @@ contract HyperCore {
     address sender,
     CoreWriterLib.UsdClassTransferAction memory action
   ) private whenAccountCreated(sender) {
+    uint64 _wei = scale(action.ntl, 6, _tokens[KNOWN_TOKEN_USDC].weiDecimals).toUint64();
+
     if (action.toPerp) {
-      if (fromPerp(action.ntl) <= _accounts[sender].spot[KNOWN_TOKEN_USDC]) {
+      if (_wei <= _accounts[sender].spot[KNOWN_TOKEN_USDC]) {
         _accounts[sender].perp += action.ntl;
-        _accounts[sender].spot[KNOWN_TOKEN_USDC] -= fromPerp(action.ntl);
+        _accounts[sender].spot[KNOWN_TOKEN_USDC] -= _wei;
       }
     } else {
       if (action.ntl <= _accounts[sender].perp) {
         _accounts[sender].perp -= action.ntl;
-        _accounts[sender].spot[KNOWN_TOKEN_USDC] += fromPerp(action.ntl);
+        _accounts[sender].spot[KNOWN_TOKEN_USDC] += _wei;
       }
     }
   }
@@ -428,7 +430,13 @@ contract HyperCore {
         : _wei / 10 ** uint8(-evmExtraWeiDecimals);
   }
 
-  function fromPerp(uint64 usd) private pure returns (uint64) {
-    return usd * 1e2;
+  function scale(uint256 amount, uint8 from, uint8 to) internal pure returns (uint256) {
+    if (from < to) {
+      return amount * 10 ** uint256(to - from);
+    }
+    if (from > to) {
+      return amount / 10 ** uint256(from - to);
+    }
+    return amount;
   }
 }
