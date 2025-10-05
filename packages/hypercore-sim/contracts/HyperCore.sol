@@ -200,6 +200,27 @@ contract HyperCore {
       executeUsdClassTransfer(sender, abi.decode(data, (CoreWriterLib.UsdClassTransferAction)));
       return;
     }
+
+    if (kind == CoreWriterLib.CORE_WRITER_ACTION_SEND_ASSET) {
+      executeSendAsset(sender, abi.decode(data, (CoreWriterLib.SendAssetAction)));
+      return;
+    }
+  }
+
+  function executeSendAsset(
+    address sender,
+    CoreWriterLib.SendAssetAction memory action
+  ) private whenAccountCreated(sender) {
+    // for now we just implement sendAsset as a spotSend and a usdClassTransfer as two separate actions
+
+    executeSpotSend(sender, CoreWriterLib.SpotSendAction(action.destination, action.token, action._wei));
+
+    uint8 weiDecimals = _tokens[action.token].weiDecimals;
+    require(weiDecimals >= 6);
+
+    uint256 usd = action._wei / 10 ** (weiDecimals - 6);
+
+    executeUsdClassTransfer(action.destination, CoreWriterLib.UsdClassTransferAction(usd.toUint64(), true));
   }
 
   function executeSpotSend(

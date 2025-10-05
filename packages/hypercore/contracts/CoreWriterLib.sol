@@ -18,6 +18,8 @@ library CoreWriterLib {
   uint24 public constant CORE_WRITER_ACTION_STAKING_WITHDRAW = 5;
   uint24 public constant CORE_WRITER_ACTION_SPOT_SEND = 6;
   uint24 public constant CORE_WRITER_ACTION_USD_CLASS_TRANSFER = 7;
+  // ...
+  uint24 public constant CORE_WRITER_ACTION_SEND_ASSET = 13;
 
   uint8 public constant LIMIT_ORDER_TIF_ALO = 1;
   uint8 public constant LIMIT_ORDER_TIF_GTC = 2;
@@ -62,6 +64,15 @@ library CoreWriterLib {
   struct UsdClassTransferAction {
     uint64 ntl;
     bool toPerp;
+  }
+
+  struct SendAssetAction {
+    address destination;
+    address subAccount;
+    uint32 source_dex;
+    uint32 destination_dex;
+    uint64 token;
+    uint64 _wei;
   }
 
   function encodeLimitOrderAction(LimitOrderAction memory action) internal pure returns (bytes memory) {
@@ -118,5 +129,13 @@ library CoreWriterLib {
 
   function sendUsdClassTransfer(UsdClassTransferAction memory action) internal {
     CoreWriter(CORE_WRITER).sendRawAction(encodeUsdClassTransfer(action));
+  }
+
+  function encodeSendAsset(SendAssetAction memory action) internal pure returns (bytes memory) {
+    return abi.encodePacked(CORE_WRITER_VERSION_1, CORE_WRITER_ACTION_SEND_ASSET, abi.encode(action));
+  }
+
+  function sendSendAsset(SendAssetAction memory action) internal {
+    CoreWriter(CORE_WRITER).sendRawAction(encodeSendAsset(action));
   }
 }
