@@ -25,6 +25,7 @@ export const deployHyperCoreFixture = async () => {
   const usdc = await hyperCore.readTokenInfo(0);
 
   await hyperCore.forceAccountCreation(signer);
+  await hyperCore.forceAccountCreation(user2);
 
   const encodeAction = (kind: number, data: string) => {
     return new Uint8Array([1, 0, 0, kind, ...getBytes(data)]);
@@ -55,6 +56,24 @@ export const deployHyperCoreFixture = async () => {
     return CoreWriter__factory.createInterface().encodeFunctionData("sendRawAction", [action]);
   };
 
+  const encodeSendSendData = (
+    destination: string,
+    subAccount: string,
+    sourceDex: BigNumberish,
+    destinationDex: BigNumberish,
+    token: BigNumberish,
+    wei: BigNumberish
+  ) => {
+    const action = encodeAction(
+      13,
+      ABI.encode(
+        ["address", "address", "uint32", "uint32", "uint64", "uint64"],
+        [destination, subAccount, sourceDex, destinationDex, token, wei]
+      )
+    );
+    return CoreWriter__factory.createInterface().encodeFunctionData("sendRawAction", [action]);
+  };
+
   return {
     users: [signer, user2, user3],
     hyperCore,
@@ -67,5 +86,6 @@ export const deployHyperCoreFixture = async () => {
     encodeVaultTransfer,
     encodeStakingDeposit,
     encodeStakingWithdraw,
+    encodeSendSendData,
   };
 };

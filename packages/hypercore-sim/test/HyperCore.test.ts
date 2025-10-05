@@ -15,8 +15,6 @@ describe("HyperCore <> HyperEVM", function () {
 
     const reader = await factory.deploy();
     await reader.waitForDeployment();
-
-    console.log(await reader.readL1BlockNumber());
   });
 
   describe("spot", function () {
@@ -109,15 +107,15 @@ describe("HyperCore <> HyperEVM", function () {
     it("silently fails when transferring token to HyperCore if account hasnt been created", async function () {
       const { users, hyperCore, hyperCoreWrite, usdc } = await loadFixture(deployHyperCoreFixture);
 
-      await usdc.mint(users[1], scale(10, 8));
+      await usdc.mint(users[2], scale(10, 8));
 
-      let spotBalance = await hyperCore.readSpotBalance(users[1], 0);
+      let spotBalance = await hyperCore.readSpotBalance(users[2], 0);
       expect(spotBalance.total).eq(0);
 
-      await usdc.connect(users[1]).transfer(systemAddress(0), scale(5, 8));
+      await usdc.connect(users[2]).transfer(systemAddress(0), scale(5, 8));
       await hyperCoreWrite.flushActionQueue();
 
-      spotBalance = await hyperCore.readSpotBalance(users[1], 0);
+      spotBalance = await hyperCore.readSpotBalance(users[2], 0);
       expect(spotBalance.total).eq(0);
     });
 
@@ -235,6 +233,30 @@ describe("HyperCore <> HyperEVM", function () {
 
       spotBalance = await hyperCore.readSpotBalance(users[0], KNOWN_TOKEN_HYPE);
       expect(spotBalance.total).eq(scale(5, 8));
+    });
+
+    it("succeeds sendAsset to perps balance", async function () {
+      const { users, hyperCore, hyperCoreWrite, usdc, encodeSendSendData } = await loadFixture(deployHyperCoreFixture);
+
+      await usdc.mint(users[0], scale(1, 8));
+
+      let spotBalance = await hyperCore.readSpotBalance(users[0], 0);
+      expect(spotBalance.total).eq(0);
+
+      await usdc.transfer(systemAddress(0), scale(1, 8));
+      await hyperCoreWrite.flushActionQueue();
+
+      await users[0].sendTransaction({
+        to: "0x3333333333333333333333333333333333333333",
+        data: encodeSendSendData(await resolveAddress(users[1]), ZeroAddress, 4294967295, 0, 0, scale(1, 8)),
+      });
+      await hyperCoreWrite.flushActionQueue();
+
+      let [withdrawable] = await hyperCore.readWithdrawable(users[0]);
+      expect(withdrawable).eq(0);
+
+      [withdrawable] = await hyperCore.readWithdrawable(users[1]);
+      expect(withdrawable).eq(1000000);
     });
   });
 
