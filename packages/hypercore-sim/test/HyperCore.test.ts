@@ -4,7 +4,7 @@ import { expect } from "chai";
 import hre, { ethers } from "hardhat";
 import { AddressLike, resolveAddress, ZeroAddress } from "ethers";
 import { scale, systemAddress } from "./utils";
-import { deployHyperCoreFixture } from "./deployHyperCoreFixture";
+import { deployHyperCoreFixture, USD_DECIMALS, USDC_DECIMALS, WEI_DECIMALS } from "./deployHyperCoreFixture";
 import { SpotERC20__factory } from "../scripts";
 
 describe("HyperCore <> HyperEVM", function () {
@@ -21,16 +21,16 @@ describe("HyperCore <> HyperEVM", function () {
     it("succeeds when transferring token to HyperCore", async function () {
       const { users, hyperCore, hyperCoreWrite, usdc } = await loadFixture(deployHyperCoreFixture);
 
-      await usdc.mint(users[0], scale(10, 8));
+      await usdc.mint(users[0], scale(10, USDC_DECIMALS));
 
       let spotBalance = await hyperCore.readSpotBalance(users[0], 0);
       expect(spotBalance.total).eq(0);
 
-      await usdc.transfer(systemAddress(0), scale(5, 8));
+      await usdc.transfer(systemAddress(0), scale(5, USDC_DECIMALS));
       await hyperCoreWrite.flushActionQueue();
 
       spotBalance = await hyperCore.readSpotBalance(users[0], 0);
-      expect(spotBalance.total).eq(scale(5, 8));
+      expect(spotBalance.total).eq(scale(5, WEI_DECIMALS));
     });
 
     it("succeeds when transferring tokens with difference precision to HyperCore", async function () {
@@ -44,7 +44,7 @@ describe("HyperCore <> HyperEVM", function () {
         evmContract: ZeroAddress,
         szDecimals: 2,
         weiDecimals: 8,
-        evmExtraWeiDecimals: -2,
+        evmExtraWeiDecimals: 2,
       });
       await hyperCore.deploySpotERC20(1);
 
@@ -52,19 +52,19 @@ describe("HyperCore <> HyperEVM", function () {
 
       const test = SpotERC20__factory.connect(tokenInfo.evmContract, users[0]);
 
-      await test.mint(users[0], scale(10, 6));
-      expect(await test.balanceOf(users[0])).eq(scale(10, 6));
+      await test.mint(users[0], scale(10, 10));
+      expect(await test.balanceOf(users[0])).eq(scale(10, 10));
 
       let spotBalance = await hyperCore.readSpotBalance(users[0], 1);
       expect(spotBalance.total).eq(0);
 
-      await test.transfer(systemAddress(1), scale(5, 6));
+      await test.transfer(systemAddress(1), scale(5, 10));
       await hyperCoreWrite.flushActionQueue();
 
       spotBalance = await hyperCore.readSpotBalance(users[0], 1);
-      expect(spotBalance.total).eq(scale(5, 8));
+      expect(spotBalance.total).eq(scale(5, WEI_DECIMALS));
 
-      expect(await test.balanceOf(users[0])).eq(scale(5, 6));
+      expect(await test.balanceOf(users[0])).eq(scale(5, 10));
     });
 
     it("succeeds when transferring tokens from HyperCore with different precision", async function () {
@@ -78,7 +78,7 @@ describe("HyperCore <> HyperEVM", function () {
         evmContract: ZeroAddress,
         szDecimals: 2,
         weiDecimals: 8,
-        evmExtraWeiDecimals: -2,
+        evmExtraWeiDecimals: 2,
       });
       await hyperCore.deploySpotERC20(1);
 
@@ -87,7 +87,7 @@ describe("HyperCore <> HyperEVM", function () {
       const test = SpotERC20__factory.connect(tokenInfo.evmContract, users[0]);
 
       await hyperCore.forceSpot(users[0], 1, 12345678);
-      await test.mint(systemAddress(1), 12345678);
+      await test.mint(systemAddress(1), 1234567800);
 
       let spotBalance = await hyperCore.readSpotBalance(users[0], 1);
       expect(spotBalance.total).eq(12345678);
@@ -101,18 +101,18 @@ describe("HyperCore <> HyperEVM", function () {
       spotBalance = await hyperCore.readSpotBalance(users[0], 1);
       expect(spotBalance.total).eq(78);
 
-      expect(await test.balanceOf(users[0])).eq(123456);
+      expect(await test.balanceOf(users[0])).eq(1234560000);
     });
 
     it("silently fails when transferring token to HyperCore if account hasnt been created", async function () {
       const { users, hyperCore, hyperCoreWrite, usdc } = await loadFixture(deployHyperCoreFixture);
 
-      await usdc.mint(users[2], scale(10, 8));
+      await usdc.mint(users[2], scale(10, USDC_DECIMALS));
 
       let spotBalance = await hyperCore.readSpotBalance(users[2], 0);
       expect(spotBalance.total).eq(0);
 
-      await usdc.connect(users[2]).transfer(systemAddress(0), scale(5, 8));
+      await usdc.connect(users[2]).transfer(systemAddress(0), scale(5, USDC_DECIMALS));
       await hyperCoreWrite.flushActionQueue();
 
       spotBalance = await hyperCore.readSpotBalance(users[2], 0);
@@ -135,19 +135,19 @@ describe("HyperCore <> HyperEVM", function () {
     it("spotSend can transfer between accounts on HyperCore", async function () {
       const { users, hyperCore, hyperCoreWrite, usdc, encodeSpotSendData } = await loadFixture(deployHyperCoreFixture);
 
-      await usdc.mint(users[0], scale(10, 8));
-      await usdc.transfer(systemAddress(0), scale(10, 8));
+      await usdc.mint(users[0], scale(10, USDC_DECIMALS));
+      await usdc.transfer(systemAddress(0), scale(10, USDC_DECIMALS));
       await hyperCoreWrite.flushActionQueue();
 
       let spotBalance1 = await hyperCore.readSpotBalance(users[0], 0);
-      expect(spotBalance1.total).eq(scale(10, 8));
+      expect(spotBalance1.total).eq(scale(10, WEI_DECIMALS));
 
       let spotBalance2 = await hyperCore.readSpotBalance(users[1], 0);
       expect(spotBalance2.total).eq(0);
 
       await users[0].sendTransaction({
         to: "0x3333333333333333333333333333333333333333",
-        data: encodeSpotSendData(users[1].address, 0, scale(10, 8)),
+        data: encodeSpotSendData(users[1].address, 0, scale(10, WEI_DECIMALS)),
       });
       await hyperCoreWrite.flushActionQueue();
 
@@ -155,63 +155,63 @@ describe("HyperCore <> HyperEVM", function () {
       expect(spotBalance1.total).eq(0);
 
       spotBalance2 = await hyperCore.readSpotBalance(users[1], 0);
-      expect(spotBalance2.total).eq(scale(10, 8));
+      expect(spotBalance2.total).eq(scale(10, WEI_DECIMALS));
 
       await users[1].sendTransaction({
         to: "0x3333333333333333333333333333333333333333",
-        data: encodeSpotSendData(users[0].address, 0, scale(6, 8)),
+        data: encodeSpotSendData(users[0].address, 0, scale(6, WEI_DECIMALS)),
       });
       await hyperCoreWrite.flushActionQueue();
 
       spotBalance1 = await hyperCore.readSpotBalance(users[0], 0);
-      expect(spotBalance1.total).eq(scale(6, 8));
+      expect(spotBalance1.total).eq(scale(6, WEI_DECIMALS));
 
       spotBalance2 = await hyperCore.readSpotBalance(users[1], 0);
-      expect(spotBalance2.total).eq(scale(4, 8));
+      expect(spotBalance2.total).eq(scale(4, WEI_DECIMALS));
     });
 
     it("spotSend can transfer from HyperCore to HyperEVM", async function () {
       const { users, hyperCore, hyperCoreWrite, usdc, encodeSpotSendData } = await loadFixture(deployHyperCoreFixture);
 
-      await usdc.mint(users[0], scale(10, 8));
-      await usdc.transfer(systemAddress(0), scale(10, 8));
+      await usdc.mint(users[0], scale(10, USDC_DECIMALS));
+      await usdc.transfer(systemAddress(0), scale(10, USDC_DECIMALS));
       await hyperCoreWrite.flushActionQueue();
 
       expect(await usdc.balanceOf(users[0])).eq(0);
 
       let spotBalance1 = await hyperCore.readSpotBalance(users[0], 0);
-      expect(spotBalance1.total).eq(scale(10, 8));
+      expect(spotBalance1.total).eq(scale(10, WEI_DECIMALS));
 
       await users[0].sendTransaction({
         to: "0x3333333333333333333333333333333333333333",
-        data: encodeSpotSendData(systemAddress(0), 0, scale(5, 8)),
+        data: encodeSpotSendData(systemAddress(0), 0, scale(5, WEI_DECIMALS)),
       });
       await hyperCoreWrite.flushActionQueue();
 
       spotBalance1 = await hyperCore.readSpotBalance(users[0], 0);
-      expect(spotBalance1.total).eq(scale(5, 8));
+      expect(spotBalance1.total).eq(scale(5, WEI_DECIMALS));
 
-      expect(await usdc.balanceOf(users[0])).eq(scale(5, 8));
+      expect(await usdc.balanceOf(users[0])).eq(scale(5, USDC_DECIMALS));
     });
 
     it("spotSend can transfer forced amount from HyperCore to HyperEVM", async function () {
       const { users, hyperCore, hyperCoreWrite, usdc, encodeSpotSendData } = await loadFixture(deployHyperCoreFixture);
 
-      await hyperCore.forceSpot(users[0], 0, scale(5, 8));
-      await usdc.mint(systemAddress(0), scale(5, 8));
+      await hyperCore.forceSpot(users[0], 0, scale(5, WEI_DECIMALS));
+      await usdc.mint(systemAddress(0), scale(5, USDC_DECIMALS));
 
       let spotBalance1 = await hyperCore.readSpotBalance(users[0], 0);
-      expect(spotBalance1.total).eq(scale(5, 8));
+      expect(spotBalance1.total).eq(scale(5, WEI_DECIMALS));
 
       await users[0].sendTransaction({
         to: "0x3333333333333333333333333333333333333333",
-        data: encodeSpotSendData(systemAddress(0), 0, scale(5, 8)),
+        data: encodeSpotSendData(systemAddress(0), 0, scale(5, WEI_DECIMALS)),
       });
       await hyperCoreWrite.flushActionQueue();
 
       spotBalance1 = await hyperCore.readSpotBalance(users[0], 0);
       expect(spotBalance1.total).eq(0);
-      expect(await usdc.balanceOf(users[0])).eq(scale(5, 8));
+      expect(await usdc.balanceOf(users[0])).eq(scale(5, USDC_DECIMALS));
     });
 
     it("spotSend can transfer native from HyperCore to HyperEVM", async function () {
@@ -238,17 +238,20 @@ describe("HyperCore <> HyperEVM", function () {
     it("succeeds sendAsset to perps balance", async function () {
       const { users, hyperCore, hyperCoreWrite, usdc, encodeSendSendData } = await loadFixture(deployHyperCoreFixture);
 
-      await usdc.mint(users[0], scale(1, 8));
+      await usdc.mint(users[0], scale(1, USDC_DECIMALS));
 
       let spotBalance = await hyperCore.readSpotBalance(users[0], 0);
       expect(spotBalance.total).eq(0);
 
-      await usdc.transfer(systemAddress(0), scale(1, 8));
+      await usdc.transfer(systemAddress(0), scale(1, USDC_DECIMALS));
       await hyperCoreWrite.flushActionQueue();
+
+      spotBalance = await hyperCore.readSpotBalance(users[0], 0);
+      expect(spotBalance.total).eq(scale(1, WEI_DECIMALS));
 
       await users[0].sendTransaction({
         to: "0x3333333333333333333333333333333333333333",
-        data: encodeSendSendData(await resolveAddress(users[1]), ZeroAddress, 4294967295, 0, 0, scale(1, 8)),
+        data: encodeSendSendData(await resolveAddress(users[1]), ZeroAddress, 4294967295, 0, 0, scale(1, WEI_DECIMALS)),
       });
       await hyperCoreWrite.flushActionQueue();
 
@@ -264,7 +267,7 @@ describe("HyperCore <> HyperEVM", function () {
     it("succeeds when transferring spot to perps", async function () {
       const { users, hyperCore, hyperCoreWrite, encodeUsdClassTransfer } = await loadFixture(deployHyperCoreFixture);
 
-      await hyperCore.forceSpot(users[0], 0, scale(10, 8));
+      await hyperCore.forceSpot(users[0], 0, scale(10, WEI_DECIMALS));
 
       let spotBalance = await hyperCore.readSpotBalance(users[0], 0);
       expect(spotBalance.total).eq(scale(10, 8));
@@ -272,23 +275,23 @@ describe("HyperCore <> HyperEVM", function () {
 
       await users[0].sendTransaction({
         to: "0x3333333333333333333333333333333333333333",
-        data: encodeUsdClassTransfer(scale(6, 6), true),
+        data: encodeUsdClassTransfer(scale(6, USD_DECIMALS), true),
       });
       await hyperCoreWrite.flushActionQueue();
 
       spotBalance = await hyperCore.readSpotBalance(users[0], 0);
-      expect(spotBalance.total).eq(scale(4, 8));
-      expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(6, 6)]);
+      expect(spotBalance.total).eq(scale(4, WEI_DECIMALS));
+      expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(6, USD_DECIMALS)]);
     });
 
     it("silently fails when transferring more than is available from spot to perps", async function () {
       const { users, hyperCore, hyperCoreWrite, encodeUsdClassTransfer } = await loadFixture(deployHyperCoreFixture);
 
-      await hyperCore.forceSpot(users[0], 0, scale(10, 8));
+      await hyperCore.forceSpot(users[0], 0, scale(10, WEI_DECIMALS));
 
       await users[0].sendTransaction({
         to: "0x3333333333333333333333333333333333333333",
-        data: encodeUsdClassTransfer(scale(20, 8), true),
+        data: encodeUsdClassTransfer(scale(20, USD_DECIMALS), true),
       });
       await hyperCoreWrite.flushActionQueue();
 
@@ -298,24 +301,24 @@ describe("HyperCore <> HyperEVM", function () {
     it("succeeds when transferring from perps to spot", async function () {
       const { users, hyperCore, hyperCoreWrite, encodeUsdClassTransfer } = await loadFixture(deployHyperCoreFixture);
 
-      await hyperCore.forceSpot(users[0], 0, scale(10, 8));
+      await hyperCore.forceSpot(users[0], 0, scale(10, WEI_DECIMALS));
 
       await users[0].sendTransaction({
         to: "0x3333333333333333333333333333333333333333",
-        data: encodeUsdClassTransfer(scale(10, 6), true),
+        data: encodeUsdClassTransfer(scale(10, USD_DECIMALS), true),
       });
       await hyperCoreWrite.flushActionQueue();
 
-      expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(10, 6)]);
+      expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(10, USD_DECIMALS)]);
 
       await users[0].sendTransaction({
         to: "0x3333333333333333333333333333333333333333",
-        data: encodeUsdClassTransfer(scale(4, 6), false),
+        data: encodeUsdClassTransfer(scale(4, USD_DECIMALS), false),
       });
       await hyperCoreWrite.flushActionQueue();
 
-      expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(6, 6)]);
-      expect(await hyperCore.readSpotBalance(users[0], 0)).deep.eq([scale(4, 8), 0, 0]);
+      expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(6, USD_DECIMALS)]);
+      expect(await hyperCore.readSpotBalance(users[0], 0)).deep.eq([scale(4, WEI_DECIMALS), 0, 0]);
     });
   });
 
@@ -323,31 +326,36 @@ describe("HyperCore <> HyperEVM", function () {
     it("succeeds when transferring into vault equity", async function () {
       const { users, hyperCore, hyperCoreWrite, encodeVaultTransfer } = await loadFixture(deployHyperCoreFixture);
 
-      await hyperCore.forcePerp(users[0], scale(10, 6));
+      await hyperCore.forcePerp(users[0], scale(10, USD_DECIMALS));
 
       await users[0].sendTransaction({
         to: "0x3333333333333333333333333333333333333333",
-        data: encodeVaultTransfer("0x0000000000000000000000000000000000000123", true, scale(6, 6)),
+        data: encodeVaultTransfer("0x0000000000000000000000000000000000000123", true, scale(6, USD_DECIMALS)),
       });
       await hyperCoreWrite.flushActionQueue();
 
       await time.increase(60 * 4);
       await hyperCoreWrite.flushActionQueue();
 
-      expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(4, 6)]);
+      expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(4, USD_DECIMALS)]);
 
       const equity = await hyperCore.readUserVaultEquity(users[0], "0x0000000000000000000000000000000000000123");
-      expect(equity.equity).eq(scale(6, 6));
+      expect(equity.equity).eq(scale(6, USD_DECIMALS));
     });
 
     it("succeeds when transferring from vault equity", async function () {
       const { users, hyperCore, hyperCoreWrite, encodeVaultTransfer } = await loadFixture(deployHyperCoreFixture);
 
-      await hyperCore.forceVaultEquity(users[0], "0x0000000000000000000000000000000000000123", scale(10, 6), 1);
+      await hyperCore.forceVaultEquity(
+        users[0],
+        "0x0000000000000000000000000000000000000123",
+        scale(10, USD_DECIMALS),
+        1
+      );
 
       await users[0].sendTransaction({
         to: "0x3333333333333333333333333333333333333333",
-        data: encodeVaultTransfer("0x0000000000000000000000000000000000000123", false, scale(6, 6)),
+        data: encodeVaultTransfer("0x0000000000000000000000000000000000000123", false, scale(6, USD_DECIMALS)),
       });
       await hyperCoreWrite.flushActionQueue();
 
@@ -357,20 +365,25 @@ describe("HyperCore <> HyperEVM", function () {
       await time.increase(4);
       await hyperCoreWrite.flushActionQueue();
 
-      expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(6, 6)]);
+      expect(await hyperCore.readWithdrawable(users[0])).deep.eq([scale(6, USD_DECIMALS)]);
 
       const equity = await hyperCore.readUserVaultEquity(users[0], "0x0000000000000000000000000000000000000123");
-      expect(equity.equity).eq(scale(4, 6));
+      expect(equity.equity).eq(scale(4, USD_DECIMALS));
     });
 
     it("fails silently when vault equity is locked", async function () {
       const { users, hyperCore, hyperCoreWrite, encodeVaultTransfer } = await loadFixture(deployHyperCoreFixture);
 
-      await hyperCore.forceVaultEquity(users[0], "0x0000000000000000000000000000000000000123", scale(10, 6), 0);
+      await hyperCore.forceVaultEquity(
+        users[0],
+        "0x0000000000000000000000000000000000000123",
+        scale(10, USD_DECIMALS),
+        0
+      );
 
       await users[0].sendTransaction({
         to: "0x3333333333333333333333333333333333333333",
-        data: encodeVaultTransfer("0x0000000000000000000000000000000000000123", false, scale(6, 6)),
+        data: encodeVaultTransfer("0x0000000000000000000000000000000000000123", false, scale(6, USD_DECIMALS)),
       });
       await hyperCoreWrite.flushActionQueue();
 

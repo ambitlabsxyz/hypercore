@@ -5,6 +5,10 @@ import { deployHyperCoreSim } from "../scripts";
 
 const ABI = AbiCoder.defaultAbiCoder();
 
+export const USDC_DECIMALS = 6;
+export const WEI_DECIMALS = 8;
+export const USD_DECIMALS = 6;
+
 export const deployHyperCoreFixture = async () => {
   const [signer, user2, user3] = await ethers.getSigners();
 
@@ -17,8 +21,8 @@ export const deployHyperCoreFixture = async () => {
     deployer: ZeroAddress,
     evmContract: ZeroAddress,
     szDecimals: 8,
-    weiDecimals: 8,
-    evmExtraWeiDecimals: 0,
+    weiDecimals: WEI_DECIMALS,
+    evmExtraWeiDecimals: USD_DECIMALS - WEI_DECIMALS,
   });
   await hyperCore.deploySpotERC20(0);
 

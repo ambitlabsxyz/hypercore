@@ -215,10 +215,7 @@ contract HyperCore {
 
     executeSpotSend(sender, CoreWriterLib.SpotSendAction(action.destination, action.token, action._wei));
 
-    uint8 weiDecimals = _tokens[action.token].weiDecimals;
-    require(weiDecimals >= 6);
-
-    uint256 usd = action._wei / 10 ** (weiDecimals - 6);
+    uint256 usd = scale(action._wei, _tokens[action.token].weiDecimals, 6);
 
     executeUsdClassTransfer(action.destination, CoreWriterLib.UsdClassTransferAction(usd.toUint64(), true));
   }
